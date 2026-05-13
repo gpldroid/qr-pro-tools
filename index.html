@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>QR Pro Tools | المحسن</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --secondary: #64748b;
+            --bg: #f3f4f6;
+            --surface: #ffffff;
+            --text: #1e293b;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --danger: #ef4444;
+            --radius: 12px;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        body { margin: 0; font-family: 'Cairo', sans-serif; background: var(--bg); color: var(--text); padding-bottom: 80px; -webkit-tap-highlight-color: transparent; }
+        
+        /* Navbar */
+        .navbar { background: var(--surface); padding: 0.8rem 1rem; display: flex; justify-content: space-between; align-items: center; box-shadow: var(--shadow); position: sticky; top: 0; z-index: 100; }
+        .brand { font-weight: 700; font-size: 1.2rem; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+        .nav-links { display: flex; gap: 5px; background: var(--bg); padding: 4px; border-radius: var(--radius); }
+        .nav-btn { background: transparent; border: none; padding: 8px 16px; cursor: pointer; border-radius: 8px; font-family: inherit; font-weight: 600; color: var(--secondary); transition: 0.3s; font-size: 0.9rem; }
+        .nav-btn.active-nav { background: var(--surface); color: var(--primary); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .lang-btn { background: none; border: 1px solid var(--border); width: 36px; height: 36px; border-radius: 50%; cursor: pointer; color: var(--text); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.8rem; }
+
+        /* Container */
+        .container { max-width: 600px; margin: 2rem auto; padding: 0 1rem; }
+        .section { display: none; background: var(--surface); padding: 2rem; border-radius: var(--radius); box-shadow: var(--shadow); animation: slideUp 0.4s ease; }
+        .section.active { display: block; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Typography */
+        h1, h2, h3 { margin-top: 0; color: var(--text); }
+        p { color: var(--secondary); line-height: 1.6; }
+
+        /* Forms */
+        .form-group { margin-bottom: 1.2rem; position: relative; }
+        label { font-size: 0.85rem; font-weight: 600; color: var(--secondary); margin-bottom: 6px; display: block; }
+        input, select, textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; box-sizing: border-box; background: #f8fafc; font-family: inherit; transition: 0.2s; font-size: 1rem; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); background: #fff; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+        /* Icons inside inputs */
+        .input-icon-wrapper { position: relative; }
+        .input-icon-wrapper i { position: absolute; top: 50%; transform: translateY(-50%); color: var(--secondary); opacity: 0.5; }
+        [dir="rtl"] .input-icon-wrapper i { left: 12px; }
+        [dir="ltr"] .input-icon-wrapper i { right: 12px; }
+
+        /* Buttons */
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; font-family: inherit; font-size: 1rem; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; }
+        .btn-primary { background: var(--primary); color: white; box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.3); }
+        .btn-primary:hover { background: var(--primary-dark); transform: translateY(-1px); }
+        .btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); margin-top: 10px; }
+        .btn-outline:hover { background: rgba(79, 70, 229, 0.05); }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-copy { padding: 6px 12px; font-size: 0.8rem; background: var(--secondary); color: white; width: auto; display: inline-flex; margin-top: 5px; }
+
+        /* Scanner Area */
+        #reader { width: 100%; border-radius: var(--radius); overflow: hidden; background: #000; min-height: 250px; position: relative; }
+        #decodeResult { background: #f1f5f9; padding: 15px; border-radius: 8px; white-space: pre-wrap; word-break: break-all; min-height: 60px; border-left: 4px solid var(--primary); font-family: monospace; position: relative; }
+        .file-upload-wrapper { border: 2px dashed var(--border); padding: 20px; text-align: center; border-radius: var(--radius); margin: 15px 0; cursor: pointer; transition: 0.2s; }
+        .file-upload-wrapper:hover { border-color: var(--primary); background: #f8fafc; }
+
+        /* Generator Area */
+        #qrcode { margin-top: 20px; display: flex; justify-content: center; padding: 20px; background: white; border: 1px solid var(--border); border-radius: var(--radius); min-height: 200px; align-items: center; }
+        #qrcode img { display: block; max-width: 100%; }
+        
+        /* Color Picker */
+        .color-row { display: flex; gap: 15px; align-items: center; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid var(--border); }
+        .color-item { display: flex; align-items: center; gap: 8px; flex: 1; }
+        input[type="color"] { width: 40px; height: 40px; padding: 0; border: none; border-radius: 50%; overflow: hidden; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+
+        /* Utilities */
+        .hidden { display: none; }
+        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 10px 20px; border-radius: 30px; font-size: 0.9rem; opacity: 0; transition: 0.3s; pointer-events: none; z-index: 1000; display: flex; align-items: center; gap: 8px; }
+        .toast.show { opacity: 1; bottom: 30px; }
+
+        footer { text-align: center; margin-top: 3rem; color: var(--secondary); font-size: 0.85rem; }
+    </style>
+</head>
+
+<body>
+
+<nav class="navbar">
+    <div class="brand"><i class="fa-solid fa-qrcode"></i> QR Pro</div>
+    <div class="nav-links">
+        <button onclick="nav('home')" class="nav-btn active-nav" data-i18n="nav_home">الرئيسية</button>
+        <button onclick="nav('decoder')" class="nav-btn" data-i18n="nav_decode">فحص</button>
+        <button onclick="nav('generator')" class="nav-btn" data-i18n="nav_generate">إنشاء</button>
+    </div>
+    <button onclick="toggleLang()" class="lang-btn">EN</button>
+</nav>
+
+<div class="container">
+    
+    <section id="home" class="section active">
+        <div style="text-align: center; padding: 20px 0;">
+            <i class="fa-solid fa-wand-magic-sparkles" style="font-size: 3rem; color: var(--primary); margin-bottom: 15px;"></i>
+            <h1 data-i18n="home_head">أدوات QR الاحترافية</h1>
+            <p data-i18n="home_desc">منصة متكاملة وسريعة لإنشاء وفحص رموز QR للروابط، الشبكات، جهات الاتصال والمزيد بكل سهولة.</p>
+            <br>
+            <div class="grid-2">
+                <button class="btn btn-primary" onclick="nav('generator')">
+                    <i class="fa-solid fa-plus"></i> <span data-i18n="btn_start_gen">إنشاء رمز</span>
+                </button>
+                <button class="btn btn-outline" style="margin:0" onclick="nav('decoder')">
+                    <i class="fa-solid fa-camera"></i> <span data-i18n="nav_decode">فحص رمز</span>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <section id="decoder" class="section">
+        <h2 data-i18n="nav_decode"><i class="fa-solid fa-expand"></i> الفاحص الذكي</h2>
+        
+        <div id="reader"></div>
+        
+        <div class="grid-2" style="margin-top: 15px;">
+            <button id="camBtn" class="btn btn-primary" onclick="toggleCamera()">
+                <i class="fa-solid fa-video"></i> <span data-i18n="btn_start_cam">تشغيل الكاميرا</span>
+            </button>
+            
+            <div class="file-upload-wrapper" onclick="document.getElementById('qr-file').click()">
+                <input type="file" id="qr-file" accept="image/*" class="hidden">
+                <i class="fa-solid fa-image" style="font-size: 1.5rem; color: var(--secondary)"></i>
+                <div style="font-size: 0.8rem; margin-top:5px" data-i18n="or_file">اختر صورة</div>
+            </div>
+        </div>
+
+        <h3 data-i18n="result" style="margin-top: 20px">النتيجة:</h3>
+        <div style="position: relative;">
+            <div id="decodeResult" data-i18n="waiting_scan">بانتظار الفحص...</div>
+            <button class="btn btn-copy hidden" id="copyResultBtn" onclick="copyResult()">
+                <i class="fa-solid fa-copy"></i> Copy
+            </button>
+        </div>
+    </section>
+
+    <section id="generator" class="section">
+        <h2 data-i18n="nav_generate"><i class="fa-solid fa-qrcode"></i> منشئ الرموز</h2>
+
+        <div class="form-group">
+            <label data-i18n="type_label">نوع الرمز:</label>
+            <select id="qrType" onchange="updateGenUI()">
+                <option value="url" data-i18n="opt_url">🔗 رابط / URL</option>
+                <option value="text" data-i18n="opt_text">📝 نص / Text</option>
+                <option value="wifi" data-i18n="opt_wifi">📶 واي فاي / Wi-Fi</option>
+                <option value="vcard" data-i18n="opt_vcard">👤 جهة اتصال / Contact</option>
+                <option value="whatsapp" data-i18n="opt_wa">💬 واتساب / WhatsApp</option>
+                <option value="email" data-i18n="opt_email">✉️ بريد إلكتروني / Email</option>
+            </select>
+        </div>
+
+        <hr style="border: 0; border-top: 1px dashed var(--border); margin: 20px 0;">
+
+        <div id="simpleBox" class="form-group">
+            <label data-i18n="lbl_content">المحتوى:</label>
+            <div class="input-icon-wrapper">
+                <input id="qrInput" placeholder="https://example.com">
+                <i class="fa-solid fa-link"></i>
+            </div>
+        </div>
+
+        <div id="wifiBox" class="hidden">
+            <div class="form-group">
+                <label>SSID Name</label>
+                <input id="ssid" placeholder="Network Name">
+            </div>
+            <div class="grid-2">
+                <div class="form-group">
+                    <label>Password</label>
+                    <input id="pass" placeholder="***" type="password">
+                </div>
+                <div class="form-group">
+                    <label>Encryption</label>
+                    <select id="encryption">
+                        <option value="WPA">WPA/WPA2</option>
+                        <option value="WEP">WEP</option>
+                        <option value="nopass">Open</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div id="vcardBox" class="hidden">
+            <div class="grid-2">
+                <input id="vcFirst" placeholder="First Name" data-ph="ph_fname">
+                <input id="vcLast" placeholder="Last Name" data-ph="ph_lname">
+            </div>
+            <div class="form-group" style="margin-top:10px">
+                <input id="vcOrg" placeholder="Company" data-ph="ph_company">
+            </div>
+            <div class="grid-2">
+                <input id="vcPhone" placeholder="Phone" type="tel" data-ph="ph_phone">
+                <input id="vcEmail" placeholder="Email" type="email" data-ph="ph_email">
+            </div>
+            <div class="form-group" style="margin-top:10px">
+                <input id="vcSite" placeholder="Website" data-ph="ph_site">
+            </div>
+        </div>
+
+        <div id="whatsappBox" class="hidden">
+            <label data-i18n="lbl_wa_num">رقم الهاتف (مع رمز الدولة):</label>
+            <input id="waPhone" placeholder="96650xxxxxxx" type="number" style="direction: ltr;">
+            <label data-i18n="lbl_wa_msg">الرسالة:</label>
+            <textarea id="waMsg" placeholder="Hello!"></textarea>
+        </div>
+
+        <div id="emailBox" class="hidden">
+            <input id="emAddress" placeholder="to@example.com" type="email">
+            <input id="emSubject" placeholder="Subject" data-ph="ph_subject" style="margin-top:10px">
+            <textarea id="emBody" placeholder="Message content..." data-ph="ph_msg" style="margin-top:10px"></textarea>
+        </div>
+
+        <label data-i18n="lbl_colors">المظهر:</label>
+        <div class="color-row">
+            <div class="color-item">
+                <input type="color" id="colorDark" value="#000000">
+                <span data-i18n="col_fg">الرمز</span>
+            </div>
+            <div class="color-item">
+                <input type="color" id="colorLight" value="#ffffff">
+                <span data-i18n="col_bg">الخلفية</span>
+            </div>
+        </div>
+
+        <button class="btn btn-primary" onclick="generateQR()" style="margin-top: 20px;">
+            <i class="fa-solid fa-wand-magic"></i> <span data-i18n="btn_create">إنشاء الرمز</span>
+        </button>
+        
+        <div id="qrcode">
+            <span style="color: #ccc; font-size: 0.9rem" data-i18n="qr_placeholder">سيظهر الرمز هنا</span>
+        </div>
+        
+        <button id="downloadBtn" class="btn btn-outline hidden" onclick="downloadQR()">
+            <i class="fa-solid fa-download"></i> <span data-i18n="btn_download">تحميل PNG</span>
+        </button>
+    </section>
+</div>
+
+<div id="toast" class="toast"><i class="fa-solid fa-circle-check"></i> <span id="toastMsg">Action Done</span></div>
+
+<footer>
+    <small>© QR Pro Tools 2026<br>IMAD LIMRANI</small>
+</footer>
+
+<script>
+    /* --- CONFIG & TRANSLATIONS --- */
+    const translations = {
+        ar: {
+            nav_home: "الرئيسية", nav_decode: "فحص", nav_generate: "إنشاء",
+            home_head: "أدوات QR الاحترافية", home_desc: "أنشئ وافحص رموز QR لجهات الاتصال والواي فاي والروابط.",
+            btn_start_gen: "ابدأ الآن", btn_start_cam: "تشغيل الكاميرا", btn_stop_cam: "إيقاف",
+            or_file: "أو اختر ملف صورة", result: "النتيجة:", type_label: "نوع الرمز:",
+            opt_url: "رابط (URL)", opt_text: "نص عادي", opt_wifi: "شبكة (Wi-Fi)", opt_vcard: "بطاقة اتصال (VCard)", opt_wa: "واتساب", opt_email: "بريد إلكتروني",
+            lbl_wa_num: "رقم الهاتف (مثال: 96650...):", lbl_wa_msg: "نص الرسالة:",
+            lbl_content: "الرابط أو النص:", lbl_colors: "تخصيص الألوان:", col_fg: "لون الرمز", col_bg: "الخلفية",
+            btn_create: "توليد الرمز", btn_download: "تحميل الصورة PNG",
+            ph_fname: "الاسم الأول", ph_lname: "اسم العائلة", ph_company: "الشركة", ph_phone: "الجوال", ph_email: "البريد", ph_site: "الموقع الإلكتروني",
+            ph_subject: "عنوان الرسالة", ph_msg: "نص الرسالة", qr_placeholder: "سيظهر الرمز هنا",
+            waiting_scan: "بانتظار الفحص أو رفع صورة...", copied: "تم نسخ النص!", err_no_data: "الرجاء إدخال البيانات!",
+            err_cam: "تعذر الوصول للكاميرا"
+        },
+        en: {
+            nav_home: "Home", nav_decode: "Scan", nav_generate: "Create",
+            home_head: "QR Pro Tools", home_desc: "Professional QR generator and scanner for WiFi, Contacts, and Links.",
+            btn_start_gen: "Create QR", btn_start_cam: "Start Camera", btn_stop_cam: "Stop",
+            or_file: "Or upload image", result: "Result:", type_label: "QR Type:",
+            opt_url: "URL Link", opt_text: "Plain Text", opt_wifi: "Wi-Fi Network", opt_vcard: "Contact (VCard)", opt_wa: "WhatsApp", opt_email: "Email",
+            lbl_wa_num: "Phone (e.g., 96650...):", lbl_wa_msg: "Message:",
+            lbl_content: "Content:", lbl_colors: "Colors:", col_fg: "Foreground", col_bg: "Background",
+            btn_create: "Generate QR", btn_download: "Download PNG",
+            ph_fname: "First Name", ph_lname: "Last Name", ph_company: "Company", ph_phone: "Phone", ph_email: "Email", ph_site: "Website",
+            ph_subject: "Subject", ph_msg: "Message Content", qr_placeholder: "QR Code appears here",
+            waiting_scan: "Waiting for scan...", copied: "Copied!", err_no_data: "Please enter data!",
+            err_cam: "Camera access failed"
+        }
+    };
+
+    let currentLang = "ar";
+
+    /* --- UI FUNCTIONS --- */
+    function nav(id) {
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        document.querySelectorAll('.nav-links button').forEach(b => b.classList.remove('active-nav'));
+        
+        // Find button that calls this nav and set active
+        const btn = Array.from(document.querySelectorAll('.nav-btn')).find(b => b.getAttribute('onclick').includes(id));
+        if(btn) btn.classList.add('active-nav');
+
+        if (id !== 'decoder') stopCamera();
+    }
+
+    function showToast(msg, type = 'success') {
+        const t = document.getElementById("toast");
+        const tm = document.getElementById("toastMsg");
+        t.style.background = type === 'error' ? 'var(--danger)' : '#333';
+        tm.innerText = msg;
+        t.classList.add("show");
+        setTimeout(() => t.classList.remove("show"), 3000);
+    }
+
+    /* --- GENERATOR LOGIC --- */
+    function updateGenUI() {
+        const type = document.getElementById("qrType").value;
+        const boxes = ["simpleBox", "wifiBox", "vcardBox", "whatsappBox", "emailBox"];
+        boxes.forEach(id => document.getElementById(id).classList.add("hidden"));
+
+        if (type === "wifi") document.getElementById("wifiBox").classList.remove("hidden");
+        else if (type === "vcard") document.getElementById("vcardBox").classList.remove("hidden");
+        else if (type === "whatsapp") document.getElementById("whatsappBox").classList.remove("hidden");
+        else if (type === "email") document.getElementById("emailBox").classList.remove("hidden");
+        else document.getElementById("simpleBox").classList.remove("hidden");
+
+        document.getElementById("downloadBtn").classList.add("hidden");
+        document.getElementById("qrcode").innerHTML = `<span style="color:#ccc">${translations[currentLang].qr_placeholder}</span>`;
+    }
+
+    function generateQR() {
+        const qrBox = document.getElementById("qrcode");
+        const type = document.getElementById("qrType").value;
+        const colorDark = document.getElementById("colorDark").value;
+        const colorLight = document.getElementById("colorLight").value;
+        let data = "";
+
+        // Data Builders
+        if (type === "wifi") {
+            const ssid = document.getElementById("ssid").value;
+            const pass = document.getElementById("pass").value;
+            const enc = document.getElementById("encryption").value;
+            if(!ssid) return showToast(translations[currentLang].err_no_data, 'error');
+            // WiFi Syntax: WIFI:T:WPA;S:mynetwork;P:mypass;;
+            data = `WIFI:T:${enc};S:${ssid};P:${pass};;`;
+        } 
+        else if (type === "vcard") {
+            const f = document.getElementById("vcFirst").value;
+            const l = document.getElementById("vcLast").value;
+            const org = document.getElementById("vcOrg").value;
+            const tel = document.getElementById("vcPhone").value;
+            const mail = document.getElementById("vcEmail").value;
+            const url = document.getElementById("vcSite").value;
+            if(!f && !l && !tel) return showToast(translations[currentLang].err_no_data, 'error');
+            
+            // Professional VCard 3.0 Structure
+            data = `BEGIN:VCARD\nVERSION:3.0\nN:${l};${f};;;\nFN:${f} ${l}\nORG:${org}\nTEL;TYPE=CELL:${tel}\nEMAIL:${mail}\nURL:${url}\nEND:VCARD`;
+        }
+        else if (type === "whatsapp") {
+            const num = document.getElementById("waPhone").value;
+            const msg = document.getElementById("waMsg").value;
+            if(!num) return showToast(translations[currentLang].err_no_data, 'error');
+            data = `https://wa.me/${num}?text=${encodeURIComponent(msg)}`;
+        }
+        else if (type === "email") {
+            const to = document.getElementById("emAddress").value;
+            const sub = document.getElementById("emSubject").value;
+            const body = document.getElementById("emBody").value;
+            data = `mailto:${to}?subject=${encodeURIComponent(sub)}&body=${encodeURIComponent(body)}`;
+        }
+        else {
+            data = document.getElementById("qrInput").value;
+            if(!data) return showToast(translations[currentLang].err_no_data, 'error');
+        }
+
+        qrBox.innerHTML = "";
+        try {
+            new QRCode(qrBox, {
+                text: data,
+                width: 256,
+                height: 256,
+                colorDark: colorDark,
+                colorLight: colorLight,
+                correctLevel: QRCode.CorrectLevel.H
+            });
+            setTimeout(() => document.getElementById("downloadBtn").classList.remove("hidden"), 100);
+        } catch(e) {
+            showToast("Error generating QR", 'error');
+        }
+    }
+
+    function downloadQR() {
+        const qrImg = document.querySelector("#qrcode img");
+        if(qrImg) {
+            // Create a canvas to add padding
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d");
+            const padding = 20;
+            canvas.width = qrImg.naturalWidth + (padding * 2);
+            canvas.height = qrImg.naturalHeight + (padding * 2);
+            
+            // Fill white background
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw QR
+            ctx.drawImage(qrImg, padding, padding);
+            
+            const link = document.createElement("a");
+            link.href = canvas.toDataURL("image/png");
+            link.download = `QR-${Date.now()}.png`;
+            link.click();
+        }
+    }
+
+    /* --- DECODER LOGIC --- */
+    let html5QrCode = null;
+    const resultBox = document.getElementById("decodeResult");
+
+    async function toggleCamera() {
+        if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
+        
+        // If already scanning, stop it
+        if (html5QrCode.isScanning) {
+            stopCamera();
+            return;
+        }
+
+        const camBtn = document.getElementById("camBtn");
+        try {
+            await html5QrCode.start(
+                { facingMode: "environment" }, 
+                { fps: 10, qrbox: { width: 250, height: 250 } },
+                (text) => { 
+                    handleScanSuccess(text);
+                    stopCamera();
+                },
+                (err) => { /* ignore per-frame errors */ }
+            );
+            
+            html5QrCode.isScanning = true;
+            camBtn.innerHTML = `<i class="fa-solid fa-stop"></i> ${translations[currentLang].btn_stop_cam}`;
+            camBtn.classList.add("btn-danger");
+            camBtn.classList.remove("btn-primary");
+            resultBox.innerText = translations[currentLang].waiting_scan;
+            
+        } catch (err) {
+            showToast(translations[currentLang].err_cam, 'error');
+        }
+    }
+
+    function stopCamera() {
+        if (html5QrCode && html5QrCode.isScanning) {
+            html5QrCode.stop().then(() => {
+                html5QrCode.isScanning = false;
+                resetCamBtn();
+            }).catch(err => console.error(err));
+        }
+    }
+
+    function resetCamBtn() {
+        const camBtn = document.getElementById("camBtn");
+        camBtn.innerHTML = `<i class="fa-solid fa-video"></i> ${translations[currentLang].btn_start_cam}`;
+        camBtn.classList.remove("btn-danger");
+        camBtn.classList.add("btn-primary");
+    }
+
+    function handleScanSuccess(text) {
+        resultBox.innerText = text;
+        resultBox.style.color = "#333";
+        document.getElementById("copyResultBtn").classList.remove("hidden");
+        showToast("QR Code Detected!");
+        // Vibrate if supported
+        if(navigator.vibrate) navigator.vibrate(200);
+    }
+
+    function copyResult() {
+        const text = resultBox.innerText;
+        navigator.clipboard.writeText(text).then(() => {
+            showToast(translations[currentLang].copied);
+        });
+    }
+
+    // File Upload Handler
+    document.getElementById("qr-file").addEventListener("change", e => {
+        if (e.target.files.length === 0) return;
+        
+        // Ensure camera is stopped before file scan to avoid conflicts
+        if(html5QrCode && html5QrCode.isScanning) {
+             html5QrCode.stop().then(() => scanFile(e.target.files[0]));
+        } else {
+             scanFile(e.target.files[0]);
+        }
+    });
+
+    function scanFile(file) {
+        const fileScanner = new Html5Qrcode("reader");
+        fileScanner.scanFile(file, true)
+            .then(txt => {
+                handleScanSuccess(txt);
+                fileScanner.clear(); // Clean up
+            })
+            .catch(err => {
+                showToast("No QR code found in image", 'error');
+                fileScanner.clear();
+            });
+    }
+
+    /* --- LANGUAGE LOGIC --- */
+    function toggleLang() {
+        currentLang = currentLang === "ar" ? "en" : "ar";
+        document.documentElement.lang = currentLang;
+        document.documentElement.dir = currentLang === "ar" ? "rtl" : "ltr";
+        document.querySelector(".lang-btn").innerText = currentLang === "ar" ? "EN" : "عربي";
+
+        document.querySelectorAll("[data-i18n]").forEach(el => {
+            const k = el.getAttribute("data-i18n");
+            if (translations[currentLang][k]) el.innerText = translations[currentLang][k];
+        });
+        document.querySelectorAll("[data-ph]").forEach(el => {
+            const k = el.getAttribute("data-ph");
+            if (translations[currentLang][k]) el.placeholder = translations[currentLang][k];
+        });
+
+        updateGenUI(); // Refresh placeholders
+    }
+
+    // Initialize
+    updateGenUI();
+</script>
+</body>
+</html>
